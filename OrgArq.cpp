@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-struct ceplog{
+struct twitter{
 	
 	int id_twitter;
 	char usuario[20];
