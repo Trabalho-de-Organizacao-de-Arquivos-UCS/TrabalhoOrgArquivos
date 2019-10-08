@@ -1,10 +1,7 @@
 require 'twitter'
 require 'bindata'
 client = Twitter::REST::Client.new do |config|
-  config.consumer_key        = "JjRBFVWXe6XxYVrYg7PRyoUm5"
-  config.consumer_secret     = "2Et1JIAEySTty0F6n0jDw3vPJfMUY0Ba8lFXIMT9L1hDTN0Tvb"
-  config.access_token        = "527812548-lqCkmM9VVQtnAEeFZtKoaTYoaPlRwOLBRVPTqG20"
-  config.access_token_secret = "phsBJwIVn0YIWOkZISV7gbnt0hWuuVjpwqKO2xSmZXmwf"
+
 end
 
 class MTwitter < BinData::Record
