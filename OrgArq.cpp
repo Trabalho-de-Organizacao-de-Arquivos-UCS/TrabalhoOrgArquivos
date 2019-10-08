@@ -31,45 +31,79 @@ char* createDir(){
 }
 
 
-main(){
+void search(struct twitter *tw, char *hashtag ){
+	char h[200];
+	int pos;
+	bool flag = false;
+	FILE *file, *index;
 	
-	char *dir = createDir();
-	FILE *file;
+	file = fopen("c:\\temp\\OrgArq\\file.dat","rb");
+	index = fopen("c:\\temp\\OrgArq\\index.dat","rb");
 	
-	struct twitter *t_object = (twitter*) malloc(sizeof(struct twitter));
-/*	strcpy(t_object->usuario, "User1");
-	strcpy(t_object->hashtag, "#Joker");
-	strcpy(t_object->data, "17/09/2019");
-	strcpy(t_object->mensagem, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua");
-	strcpy(t_object->pais, "Brazil");
-	strcpy(t_object->usuario, "User1");
-	
-	if(file = fopen("c:\\temp\\OrgArq\\file.dat","ab")){
-		 fwrite(t_object, sizeof(struct twitter), 1, file);
+	while(fread(&h, sizeof(h),1,index)){
+		if(strcmp(h,hashtag) == 0){
+			flag = true;
+			break;
+		}
+	}
+	if(flag){
+		fseek(index,(-1) * sizeof(*tw),SEEK_CUR);
+		pos = ftell(index);
+		fseek(file, pos/ sizeof(h) * sizeof(*tw), SEEK_SET);
+		fread(tw,sizeof(*tw),1,file);
+	    printf(" ID: %d \n USER: %s \n HASHTAGS: %s \n MENSAGEM: %s",tw->id_twitter,tw->usuario, tw->hashtag,tw->mensagem); 
 	}
 	
-	strcpy(t_object->usuario, "User2");
-	strcpy(t_object->hashtag, "#Rambo");
-	strcpy(t_object->data, "19/09/2019");
-	strcpy(t_object->mensagem, "Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua");
-	strcpy(t_object->pais, "Brazil");
-	strcpy(t_object->usuario, "User2");
-	
-	if(file = fopen("c:\\temp\\OrgArq\\file.dat","ab")){
-		 fwrite(t_object, sizeof(struct twitter), 1, file);
-	}*/
+}
+
+
+void indexar(struct twitter *tw){
+	FILE *file, *index;
 	
 	if(file = fopen("c:\\temp\\OrgArq\\file.dat","rb")){
 
 		while(!feof(file)){
-			fread(t_object, sizeof(struct twitter), 1, file);
-			printf("\n--------------------------------------------------------------------------------------------------------------------------------\n");
-			printf(" ID: %d \n USER: %s \n HASHTAGS: %s \n MENSAGEM: %s",t_object->id_twitter,t_object->usuario, t_object->hashtag,t_object->mensagem); 
-			printf("\n--------------------------------------------------------------------------------------------------------------------------------\n");
+			fread(tw, sizeof(struct twitter), 1, file);
+			
+			if(index = fopen("c:\\temp\\OrgArq\\index.dat","ab")){
+				fseek(index,0,SEEK_END);
+				fwrite(&(tw->hashtag),sizeof(tw->hashtag),1,index);
+				rewind(index);
+			}
+			
 		}
 
-		 
 	}
+}
+
+void displayAll(struct twitter *tw){
+
+	FILE *file;
+	
+	if(file = fopen("c:\\temp\\OrgArq\\file.dat","rb")){
+
+		while(!feof(file)){
+			fread(tw, sizeof(struct twitter), 1, file);
+					
+			printf(" ID: %d \n USER: %s \n HASHTAGS: %s \n MENSAGEM: %s",tw->id_twitter,tw->usuario, tw->hashtag,tw->mensagem); 
+			printf("\n--------------------------------------------------------------------------------------------------------------------------------\n");
+		
+		}
+
+	}
+}
+
+main(){
+	
+	char *dir = createDir();
+	FILE *file, *index;
+	
+	struct twitter *t_object = (twitter*) malloc(sizeof(struct twitter));
+
+	displayAll(t_object);
+//	search(t_object,"#Joker#DC");
+//  indexar(t_object);	
+	
 	
 	
 	
