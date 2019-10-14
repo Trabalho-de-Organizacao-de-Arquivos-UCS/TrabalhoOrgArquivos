@@ -13,6 +13,13 @@ struct twitter{
 	
 };
 
+
+struct index{
+	char hashtag[200];
+	long int pos_in_file;
+
+};
+
 char* createDir(){
 	if(!CreateDirectory("c:\\temp\\OrgArq", NULL)) {
         return NULL;
@@ -32,48 +39,71 @@ char* createDir(){
 
 
 void search(struct twitter *tw, char *hashtag ){
-	char h[200];
+	struct index *aux_index = (struct index *)malloc(sizeof(struct index));
 	int pos;
 	bool flag = false;
 	FILE *file, *index;
 	
-	file = fopen("c:\\temp\\OrgArq\\file.dat","rb");
-	index = fopen("c:\\temp\\OrgArq\\index.dat","rb");
+	char *ocorrencia[200];
 	
-	while(fread(&h, sizeof(h),1,index)){
-		if(strcmp(h,hashtag) == 0){
-			flag = true;
-			break;
+	file = fopen("c:\\temp\\OrgArq\\file.dat","rb");
+	
+	
+	
+	if(index = fopen("c:\\temp\\OrgArq\\index.dat","rb")){
+
+		while(!feof(index)){
+			fread(aux_index, sizeof(struct index), 1, index);
+			*ocorrencia = strstr(aux_index->hashtag, hashtag);
+			if(*ocorrencia != NULL){
+				fseek(file, aux_index->pos_in_file - sizeof(*tw),SEEK_SET);
+				fread(tw, sizeof(struct twitter), 1, file);
+				
+				printf(" ID: %d \n USER: %s \n HASHTAGS: %s \n MENSAGEM: %s",tw->id_twitter,tw->usuario, tw->hashtag,tw->mensagem); 
+				printf("\n--------------------------------------------------------------------------------------------------------------------------------\n");
+			}
+	
+		
 		}
+
 	}
-	if(flag){
-		fseek(index,(-1) * sizeof(*tw),SEEK_CUR);
-		pos = ftell(index);
-		fseek(file, pos/ sizeof(h) * sizeof(*tw), SEEK_SET);
-		fread(tw,sizeof(*tw),1,file);
-	    printf(" ID: %d \n USER: %s \n HASHTAGS: %s \n MENSAGEM: %s",tw->id_twitter,tw->usuario, tw->hashtag,tw->mensagem); 
-	}
+	
+	
+
+	
 	
 }
 
 
-void indexar(struct twitter *tw){
-	FILE *file, *index;
-	
-	if(file = fopen("c:\\temp\\OrgArq\\file.dat","rb")){
 
+
+void indexar(struct twitter *tw, struct index *ix){
+	FILE *file, *index;
+	struct index *aux_index = (struct index *)malloc(sizeof(struct index));
+	int posicao_index = 0;
+	if(file = fopen("c:\\temp\\OrgArq\\file.dat","rb")){
+	
 		while(!feof(file)){
-			fread(tw, sizeof(struct twitter), 1, file);
 			
+			fread(tw, sizeof(struct twitter), 1, file);
+		 
 			if(index = fopen("c:\\temp\\OrgArq\\index.dat","ab")){
-				fseek(index,0,SEEK_END);
-				fwrite(&(tw->hashtag),sizeof(tw->hashtag),1,index);
-				rewind(index);
+					aux_index->pos_in_file = ftell(file);
+					strcpy(aux_index->hashtag, tw->hashtag);
+					printf("NOVO REGISTRO CRIADO \n");
+					fwrite(aux_index,sizeof(struct index),1,index);
+					printf("NOVO REGISTRO INSERIDO NO INDEX: %s \n",aux_index->hashtag);
+			
 			}
 			
+			fclose(index);
+			
 		}
-
+		
 	}
+	
+	
+
 }
 
 void displayAll(struct twitter *tw){
@@ -93,17 +123,21 @@ void displayAll(struct twitter *tw){
 	}
 }
 
+
+
 main(){
 	
-	char *dir = createDir();
+	char *dir = createDir(); 
 	FILE *file, *index;
 	
-	struct twitter *t_object = (twitter*) malloc(sizeof(struct twitter));
+	struct twitter *t_object = (struct twitter*) malloc(sizeof(struct twitter));
+	struct index *t_index = (struct index *)malloc(sizeof(struct index));
 
-	displayAll(t_object);
-//	search(t_object,"#Joker#DC");
-//  indexar(t_object);	
-	
+//	displayAll(t_object);
+	search(t_object,"#TheRiseOfSkywalker");
+ //indexar(t_object,t_index);
+  
+
 	
 	
 	
