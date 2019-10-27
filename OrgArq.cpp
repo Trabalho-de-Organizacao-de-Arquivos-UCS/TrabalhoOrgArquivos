@@ -41,6 +41,7 @@ char* createDir(){
 void search(struct twitter *tw, char *hashtag ){
 	struct index *aux_index = (struct index *)malloc(sizeof(struct index));
 	int pos;
+	int count = 0;
 	bool flag = false;
 	FILE *file, *index;
 	
@@ -61,10 +62,12 @@ void search(struct twitter *tw, char *hashtag ){
 				
 				printf(" ID: %d \n USER: %s \n HASHTAGS: %s \n MENSAGEM: %s",tw->id_twitter,tw->usuario, tw->hashtag,tw->mensagem); 
 				printf("\n--------------------------------------------------------------------------------------------------------------------------------\n");
+				count++;
 			}
 	
 		
 		}
+		printf("%d registros\n", count);
 
 	}
 	
@@ -90,7 +93,6 @@ void indexar(struct twitter *tw, struct index *ix){
 			if(index = fopen("c:\\temp\\OrgArq\\index.dat","ab")){
 					aux_index->pos_in_file = ftell(file);
 					strcpy(aux_index->hashtag, tw->hashtag);
-					printf("NOVO REGISTRO CRIADO \n");
 					fwrite(aux_index,sizeof(struct index),1,index);
 					printf("NOVO REGISTRO INSERIDO NO INDEX: %s \n",aux_index->hashtag);
 			
@@ -109,7 +111,7 @@ void indexar(struct twitter *tw, struct index *ix){
 void displayAll(struct twitter *tw){
 
 	FILE *file;
-	
+	int count = 0;
 	if(file = fopen("c:\\temp\\OrgArq\\file.dat","rb")){
 
 		while(!feof(file)){
@@ -117,24 +119,68 @@ void displayAll(struct twitter *tw){
 					
 			printf(" ID: %d \n USER: %s \n HASHTAGS: %s \n MENSAGEM: %s",tw->id_twitter,tw->usuario, tw->hashtag,tw->mensagem); 
 			printf("\n--------------------------------------------------------------------------------------------------------------------------------\n");
-		
+			count++;
 		}
+		printf("%d registros\n", count);
 
 	}
 }
 
 
 
-main(){
-	
+void LaunchMenu(){
 	char *dir = createDir(); 
 	FILE *file, *index;
 	
 	struct twitter *t_object = (struct twitter*) malloc(sizeof(struct twitter));
 	struct index *t_index = (struct index *)malloc(sizeof(struct index));
+	
+	char menu[500] = "\nSelecione a opcao abaixo\n1- Listar todos os registros\n2- Indexar Arquivo\n3- Pesquisar Hashtag\nInforme a opcao: ";
+    printf("\n%s\n",menu);
+	bool exit = false;
+	while(!exit){
+		
+	
+		int option;
+		
+		scanf("%d",&option);
+		
+		switch(option){
+			case 1:
+				displayAll(t_object);
+			    printf("\n%s\n",menu);
+			break;
+			case 2:
+				indexar(t_object,t_index);
+				printf("\n%s\n",menu);
+			break;
+			case 3:
+				char term[200];
+				printf("\nInforme a hashtag:\n");
+				scanf("%s",&term);
+				search(t_object,term);
+				
+				printf("\n%s\n",menu);
+			break;
+			case 0:
+				exit = true;
+			break;
+		}
+	}
+	
+	
+	
+}
 
-//	displayAll(t_object);
-	search(t_object,"#TheRiseOfSkywalker");
+
+main(){
+	
+	
+	
+	
+LaunchMenu();
+//	
+	
  //indexar(t_object,t_index);
   
 
