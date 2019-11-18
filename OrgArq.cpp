@@ -1,6 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <Windows.h>
+
+
+typedef struct {
+  int array[9999];
+  size_t used = 0;
+  size_t size = 0;
+} Array;
+
+void insertArray(Array *a, int element) {
+  if (a->used < 9999) {
+    a->array[a->used++] = element;
+    a->size = a->used;
+  }
+  
+}
+
+struct index_prim{
+	char hashtag[200];
+	Array lista;
+
+};
+
+
 struct twitter{
 	
 	int id_twitter;
@@ -25,6 +48,7 @@ struct usuario_index{
 	long int pos_in_file;
 
 };
+
 
 char* createDir(){
 	if(!CreateDirectory("c:\\temp\\OrgArq", NULL)) {
@@ -103,7 +127,6 @@ void indexar(struct twitter *tw, struct index *ix){
 					printf("NOVO REGISTRO INSERIDO NO INDEX: %s \n",aux_index->hashtag);
 			
 			}
-			
 			fclose(index);
 			
 		}
@@ -113,6 +136,130 @@ void indexar(struct twitter *tw, struct index *ix){
 	
 
 }
+
+void testet(){
+	FILE *index_primario;
+	struct index_prim *aux_index_prim = (struct index_prim *)malloc(sizeof(struct index_prim));
+	
+	
+		if(	index_primario = fopen("c:\\temp\\OrgArq\\index_prim.dat","rb")){
+			
+			for ( ;; ) { 
+			    fread(aux_index_prim, sizeof(struct index_prim), 1, index_primario);
+			    if (feof( index_primario )) break;
+			    printf("------------------\n");
+				if(aux_index_prim->hashtag[0] == '#'){
+					for(int i = 0; i < aux_index_prim->lista.used; i++){				
+							printf("Hash:%s - %d\n",aux_index_prim->hashtag,aux_index_prim->lista.array[i]);
+					}
+			    }
+		   }
+		}
+}
+
+void indexarPrim(){
+
+	struct index_prim *aux_index_prim = (struct index_prim *)malloc(sizeof(struct index_prim));
+	
+	struct index_prim *retorno = (struct index_prim *)malloc(sizeof(struct index_prim));
+	
+	struct index *aux_index = (struct index *)malloc(sizeof(struct index));
+	
+	FILE *index_primario, *index, *temp; 
+	
+	index_primario = fopen("c:\\temp\\OrgArq\\index_prim.dat","wb");
+	temp = fopen("c:\\temp\\OrgArq\\temp.dat","wb");
+	fclose(index_primario);
+	fclose(temp);
+	
+	
+	aux_index = (struct index *)malloc(sizeof(struct index));
+	index = fopen("c:\\temp\\OrgArq\\index.dat","rb");
+	bool exist = false, breake = false,f_reg = true;
+	while(!feof(index)){
+		exist = false;
+		breake = false;
+		temp = fopen("c:\\temp\\OrgArq\\temp.dat","wb");
+		fread(aux_index, sizeof(struct index), 1, index);
+		
+
+   	   
+   	    	f_reg = false;
+   	    	index_primario = fopen("c:\\temp\\OrgArq\\index_prim.dat","rb");
+		
+			while(!feof(index_primario)){
+
+				
+				aux_index_prim = (struct index_prim *)malloc(sizeof(struct index_prim));
+				
+				fread(aux_index_prim, sizeof(struct index_prim), 1, index_primario);
+				
+							
+				printf("COMPARANDO: aux_index->hashtag: %s =  aux_index_prim->hashtag: %s\n", aux_index->hashtag,aux_index_prim->hashtag);
+				if(strcmp(aux_index->hashtag,aux_index_prim->hashtag) == 0  && aux_index->hashtag[0]  == '#'){
+					exist = true;
+					printf("HASH EXISTENTE: %s\n", aux_index->hashtag);
+					int index_pos = ftell(index);
+					insertArray(&(aux_index_prim->lista), index_pos);
+				}
+				if(aux_index_prim->hashtag[0] == '#' && breake == false){
+					
+					fwrite(aux_index_prim,sizeof(struct index_prim),1,temp);
+				}
+			
+				
+			}
+   	    
+   	    	
+		
+	
+			if(exist == false && aux_index->hashtag[0] == '#'){
+				printf("HASH NÃO EXISTENTE: %s\n", aux_index->hashtag);
+				Array list;
+//				initArray(&list, 1);
+				insertArray(&list, ftell(index));
+				aux_index_prim->lista = list;
+				strcpy(aux_index_prim->hashtag,aux_index->hashtag);
+				fwrite(aux_index_prim,sizeof(struct index_prim),1,temp);
+			}
+			
+			
+	
+		fclose(index_primario);
+		fclose(temp);
+		
+		temp = fopen("c:\\temp\\OrgArq\\temp.dat","rb");
+		index_primario = fopen("c:\\temp\\OrgArq\\index_prim.dat","wb");
+		printf("PASSANDO PARA INDEXP-\n");
+		while(!feof(temp)){
+			
+			aux_index_prim = (struct index_prim *)malloc(sizeof(struct index_prim));
+			fread(aux_index_prim, sizeof(struct index_prim), 1, temp);
+			
+			if(aux_index_prim->hashtag[0] == '#'){
+					
+				printf("PASSANDO: => %s\n", aux_index_prim->hashtag);
+				fwrite(aux_index_prim,sizeof(struct index_prim),1,index_primario);
+			}
+			
+			
+		}
+	
+		fclose(temp);
+		fclose(index_primario);
+		
+	}
+	
+
+		
+
+	fclose(index_primario);
+	fclose(index);
+	fclose(temp);
+	
+
+}
+
 
 
 void indexarByUser(struct twitter *tw, struct usuario_index *ix){
@@ -191,6 +338,7 @@ void LaunchMenu(){
 			break;
 			case 2:
 				indexar(t_object,t_index);
+				indexarPrim();	
 				printf("\n%s\n",menu);
 			break;
 			case 3:
@@ -219,8 +367,8 @@ void LaunchMenu(){
 main(){
 	
 	
-	
-	
+//testet();	
+//indexarPrim();	
 LaunchMenu();
 //	
 	
