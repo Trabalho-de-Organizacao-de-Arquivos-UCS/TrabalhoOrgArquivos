@@ -1,41 +1,33 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <Windows.h>
 
-
-typedef struct {
-  int array[9999];
-  size_t used = 0;
-  size_t size = 0;
-} Array;
-
-void insertArray(Array *a, int element) {
-  if (a->used < 9999) {
-    a->array[a->used++] = element;
-    a->size = a->used;
-  }
-  
-}
-
-struct index_prim{
-	char hashtag[200];
-	Array lista;
-
-};
-
-
 struct twitter{
-	
+
 	int id_twitter;
 	char usuario[20];
 	char mensagem[280];
 	char data[8];
 	char pais[20];
 	char hashtag[200];
-	
-	
+
+
 };
 
+char* data_file = "c:\\temp\\OrgArq\\file.dat";
+char* index_file = "c:\\temp\\OrgArq\\index.dat";
+char* index_user_file = "c:\\temp\\OrgArq\\index_user.dat";
+
+// char* data_file = "/data/college/TrabalhoOrgArquivos/file.dat";
+// char* index_file = "/data/college/TrabalhoOrgArquivos/index.dat";
+// char* index_user_file = "/data/college/TrabalhoOrgArquivos/index_user.dat";
+
+struct index **memory_index = NULL;
+long int memory_index_size = 0;
+
+struct usuario_index **memory_user_index = NULL;
+long int memory_user_index_size = 0;
 
 struct index{
 	char hashtag[200];
@@ -56,100 +48,126 @@ char* createDir(){
   	}
   	else{
   		FILE *file;
-  		
-  		if(file = fopen("c:\\temp\\OrgArq\\file.dat","wb+")){
-		 return "c:\\temp\\OrgArq\\file.dat";
+
+  		if(file = fopen(data_file,"wb+")){
+		 return data_file;
 		}
 		else{
 			 return NULL;
 		}
 	}
-    
+	// return NULL;
 }
 
+void search_memory(struct twitter *tw, char *hashtag ){
+	int i, count = 0;
+	bool flag = false;
+	FILE *file;
 
-void search(struct twitter *tw, char *hashtag ){
+	char *ocorrencia[200];
+
+	file = fopen(data_file,"rb");
+
+	for(i = 0; i < memory_index_size; i++) {
+		*ocorrencia = strstr(memory_index[i]->hashtag, hashtag);
+		if(*ocorrencia != NULL){
+			fseek(file, memory_index[i]->pos_in_file - sizeof(struct twitter), SEEK_SET);
+			fread(tw, sizeof(struct twitter), 1, file);
+
+			printf("MATCHED POS:%ld {%s}|{%s}\n", memory_index[i]->pos_in_file, memory_index[i]->hashtag, hashtag);
+			printf(" ID: %d \n USER: %s \n HASHTAGS: %s \n MENSAGEM: %s",tw->id_twitter,tw->usuario, tw->hashtag,tw->mensagem);
+			printf("\n--------------------------------------------------------------------------------------------------------------------------------\n");
+			count++;
+		}
+	}
+
+	printf("%d registros em mem贸ria\n", count);
+}
+
+void search_file(struct twitter *tw, char *hashtag ){
 	struct index *aux_index = (struct index *)malloc(sizeof(struct index));
 	int pos;
 	int count = 0;
 	bool flag = false;
 	FILE *file, *index;
-	
-	char *ocorrencia[200];
-	
-	file = fopen("c:\\temp\\OrgArq\\file.dat","rb");
-	
-	
-	
-	if(index = fopen("c:\\temp\\OrgArq\\index.dat","rb")){
 
+	char *ocorrencia[200];
+
+	file = fopen(data_file,"rb");
+
+	if(index = fopen(index_file,"rb")){
 		while(!feof(index)){
 			fread(aux_index, sizeof(struct index), 1, index);
 			*ocorrencia = strstr(aux_index->hashtag, hashtag);
 			if(*ocorrencia != NULL){
-				fseek(file, aux_index->pos_in_file - sizeof(*tw),SEEK_SET);
+				fseek(file, aux_index->pos_in_file - sizeof(struct twitter), SEEK_SET);
 				fread(tw, sizeof(struct twitter), 1, file);
-				
-				printf(" ID: %d \n USER: %s \n HASHTAGS: %s \n MENSAGEM: %s",tw->id_twitter,tw->usuario, tw->hashtag,tw->mensagem); 
+
+				printf("MATCHED POS:%ld {%s}|{%s}\n", aux_index->pos_in_file, aux_index->hashtag, hashtag);
+				printf(" ID: %d \n USER: %s \n HASHTAGS: %s \n MENSAGEM: %s",tw->id_twitter,tw->usuario, tw->hashtag,tw->mensagem);
 				printf("\n--------------------------------------------------------------------------------------------------------------------------------\n");
 				count++;
 			}
-	
-		
+
 		}
-		printf("%d registros\n", count);
+		printf("%d registros em arquivo\n", count);
 
 	}
-	
-	
-
-	
-	
 }
 
-
+void search(struct twitter *tw, char *hashtag ) {
+	if(memory_index_size) search_memory(tw, hashtag);
+	else search_file(tw, hashtag);
+}
 
 
 void indexar(struct twitter *tw, struct index *ix){
 	FILE *file, *index;
 	struct index *aux_index = (struct index *)malloc(sizeof(struct index));
 	int posicao_index = 0;
-	if(file = fopen("c:\\temp\\OrgArq\\file.dat","rb")){
-	
+	if(file = fopen(data_file,"rb")){
+
 		while(!feof(file)){
-			
+
 			fread(tw, sizeof(struct twitter), 1, file);
-		 
-			if(index = fopen("c:\\temp\\OrgArq\\index.dat","ab")){
+
+			if(posicao_index) {
+				index = fopen(index_file,"ab");
+			} else {
+				index = fopen(index_file,"wb");
+				posicao_index++;
+			}
+
+			if(index){
 					aux_index->pos_in_file = ftell(file);
 					strcpy(aux_index->hashtag, tw->hashtag);
 					fwrite(aux_index,sizeof(struct index),1,index);
-					printf("NOVO REGISTRO INSERIDO NO INDEX: %s \n",aux_index->hashtag);
-			
+					printf("NOVO REGISTRO INSERIDO NO INDEX (%ld): %s \n",aux_index->pos_in_file, aux_index->hashtag);
+
 			}
 			fclose(index);
-			
+
 		}
-		
+
 	}
-	
-	
+
+
 
 }
 
 void testet(){
 	FILE *index_primario;
 	struct index_prim *aux_index_prim = (struct index_prim *)malloc(sizeof(struct index_prim));
-	
-	
+
+
 		if(	index_primario = fopen("c:\\temp\\OrgArq\\index_prim.dat","rb")){
-			
-			for ( ;; ) { 
+
+			for ( ;; ) {
 			    fread(aux_index_prim, sizeof(struct index_prim), 1, index_primario);
 			    if (feof( index_primario )) break;
 			    printf("------------------\n");
 				if(aux_index_prim->hashtag[0] == '#'){
-					for(int i = 0; i < aux_index_prim->lista.used; i++){				
+					for(int i = 0; i < aux_index_prim->lista.used; i++){
 							printf("Hash:%s - %d\n",aux_index_prim->hashtag,aux_index_prim->lista.array[i]);
 					}
 			    }
@@ -160,19 +178,19 @@ void testet(){
 void indexarPrim(){
 
 	struct index_prim *aux_index_prim = (struct index_prim *)malloc(sizeof(struct index_prim));
-	
+
 	struct index_prim *retorno = (struct index_prim *)malloc(sizeof(struct index_prim));
-	
+
 	struct index *aux_index = (struct index *)malloc(sizeof(struct index));
-	
-	FILE *index_primario, *index, *temp; 
-	
+
+	FILE *index_primario, *index, *temp;
+
 	index_primario = fopen("c:\\temp\\OrgArq\\index_prim.dat","wb");
 	temp = fopen("c:\\temp\\OrgArq\\temp.dat","wb");
 	fclose(index_primario);
 	fclose(temp);
-	
-	
+
+
 	aux_index = (struct index *)malloc(sizeof(struct index));
 	index = fopen("c:\\temp\\OrgArq\\index.dat","rb");
 	bool exist = false, breake = false,f_reg = true;
@@ -181,20 +199,20 @@ void indexarPrim(){
 		breake = false;
 		temp = fopen("c:\\temp\\OrgArq\\temp.dat","wb");
 		fread(aux_index, sizeof(struct index), 1, index);
-		
 
-   	   
+
+
    	    	f_reg = false;
    	    	index_primario = fopen("c:\\temp\\OrgArq\\index_prim.dat","rb");
-		
+
 			while(!feof(index_primario)){
 
-				
+
 				aux_index_prim = (struct index_prim *)malloc(sizeof(struct index_prim));
-				
+
 				fread(aux_index_prim, sizeof(struct index_prim), 1, index_primario);
-				
-							
+
+
 				printf("COMPARANDO: aux_index->hashtag: %s =  aux_index_prim->hashtag: %s\n", aux_index->hashtag,aux_index_prim->hashtag);
 				if(strcmp(aux_index->hashtag,aux_index_prim->hashtag) == 0  && aux_index->hashtag[0]  == '#'){
 					exist = true;
@@ -203,18 +221,18 @@ void indexarPrim(){
 					insertArray(&(aux_index_prim->lista), index_pos);
 				}
 				if(aux_index_prim->hashtag[0] == '#' && breake == false){
-					
+
 					fwrite(aux_index_prim,sizeof(struct index_prim),1,temp);
 				}
-			
-				
+
+
 			}
-   	    
-   	    	
-		
-	
+
+
+
+
 			if(exist == false && aux_index->hashtag[0] == '#'){
-				printf("HASH N肙 EXISTENTE: %s\n", aux_index->hashtag);
+				printf("HASH N锟絆 EXISTENTE: %s\n", aux_index->hashtag);
 				Array list;
 //				initArray(&list, 1);
 				insertArray(&list, ftell(index));
@@ -222,41 +240,41 @@ void indexarPrim(){
 				strcpy(aux_index_prim->hashtag,aux_index->hashtag);
 				fwrite(aux_index_prim,sizeof(struct index_prim),1,temp);
 			}
-			
-			
-	
+
+
+
 		fclose(index_primario);
 		fclose(temp);
-		
+
 		temp = fopen("c:\\temp\\OrgArq\\temp.dat","rb");
 		index_primario = fopen("c:\\temp\\OrgArq\\index_prim.dat","wb");
 		printf("PASSANDO PARA INDEXP-\n");
 		while(!feof(temp)){
-			
+
 			aux_index_prim = (struct index_prim *)malloc(sizeof(struct index_prim));
 			fread(aux_index_prim, sizeof(struct index_prim), 1, temp);
-			
+
 			if(aux_index_prim->hashtag[0] == '#'){
-					
+
 				printf("PASSANDO: => %s\n", aux_index_prim->hashtag);
 				fwrite(aux_index_prim,sizeof(struct index_prim),1,index_primario);
 			}
-			
-			
+
+
 		}
-	
+
 		fclose(temp);
 		fclose(index_primario);
-		
-	}
-	
 
-		
+	}
+
+
+
 
 	fclose(index_primario);
 	fclose(index);
 	fclose(temp);
-	
+
 
 }
 
@@ -266,71 +284,161 @@ void indexarByUser(struct twitter *tw, struct usuario_index *ix){
 	FILE *file, *index;
 	struct usuario_index *aux_index = (struct usuario_index *)malloc(sizeof(struct usuario_index));
 	int posicao_index = 0;
-	if(file = fopen("c:\\temp\\OrgArq\\file.dat","rb")){
-	
+	if(file = fopen(data_file,"rb")){
+
 		while(!feof(file)){
-			
+
 			fread(tw, sizeof(struct twitter), 1, file);
-		 
-			if(index = fopen("c:\\temp\\OrgArq\\index_user.dat","ab")){
-				if(strlen(tw->usuario) <= 20){				
+
+			if(posicao_index) {
+				index = fopen(index_user_file,"ab");
+			} else {
+				index = fopen(index_user_file,"wb");
+				posicao_index++;
+			}
+
+			if(index){
+				if(strlen(tw->usuario) <= 20){
 					aux_index->pos_in_file = ftell(file);
 					strcpy(aux_index->usuario, tw->usuario);
 					fwrite(aux_index,sizeof(struct usuario_index),1,index);
 					printf("NOVO REGISTRO INSERIDO NO INDEX: %s \n",aux_index->usuario);
 				}
-			
-			}
-			
-			fclose(index);
-			
-		}
-		
-	}
-	
-	
 
+			}
+
+			fclose(index);
+
+		}
+
+	}
+
+}
+
+void indexar_em_memoria(struct twitter *tw, struct index *ix) {
+	FILE *file, *index;
+	struct index *aux_index = (struct index *)malloc(sizeof(struct index));
+
+	file = fopen(data_file,"rb");
+	if(!file) return;
+
+	index = fopen(index_file,"rb");
+
+	if(!index) {
+		indexar(tw, ix);
+		index = fopen(index_file,"rb");
+	}
+
+	fseek(index, 0L, SEEK_END);
+	memory_index_size = ftell(index) / sizeof(struct index);
+
+	printf("Hashtags carregadas %ld\n", memory_index_size);
+
+	memory_index = (struct index **) malloc(memory_index_size * sizeof(struct index *));
+
+	int i;
+	fseek(index, 0L, SEEK_SET);
+
+	for(i = 0; i < memory_index_size; i++) {
+		if(feof(index)) {
+			printf("end of index before expected\n");
+			memory_index_size = i + 1;
+		}
+
+		memory_index[i] = (struct index *) malloc(sizeof(struct index));
+		fread(memory_index[i], sizeof(struct index), 1, index);
+	}
+
+	printf("Index carregado em mem贸ria com sucesso!");
+}
+
+void indexar_user_em_memoria(struct twitter *tw, struct usuario_index *ix) {
+	FILE *file, *index;
+	struct usuario_index *aux_index = (struct usuario_index *)malloc(sizeof(struct usuario_index));
+
+	file = fopen(data_file,"rb");
+	if(!file) return;
+
+	index = fopen(index_user_file,"rb");
+
+	if(!index) {
+		indexarByUser(tw, ix);
+		index = fopen(index_user_file,"rb");
+	}
+
+	fseek(index, 0L, SEEK_END);
+	memory_user_index_size = ftell(index) / sizeof(struct usuario_index);
+
+	printf("Usuarios carregados %ld\n", memory_user_index_size);
+
+	memory_user_index = (struct usuario_index **) malloc(memory_user_index_size * sizeof(struct usuario_index *));
+
+	int i;
+	fseek(index, 0L, SEEK_SET);
+
+	for(i = 0; i < memory_user_index_size; i++) {
+		if(feof(index)) {
+			printf("end of index before expected\n");
+			memory_user_index_size = i + 1;
+		}
+
+		memory_user_index[i] = (struct usuario_index *) malloc(sizeof(struct usuario_index));
+		fread(memory_user_index[i], sizeof(struct usuario_index), 1, index);
+	}
+
+	printf("Index usu谩rio carregado em mem贸ria com sucesso!");
 }
 
 void displayAll(struct twitter *tw){
 
 	FILE *file;
 	int count = 0;
-	if(file = fopen("c:\\temp\\OrgArq\\file.dat","rb")){
+		printf("display all\n");
+	if(file = fopen(data_file,"rb")){
 
 		while(!feof(file)){
 			fread(tw, sizeof(struct twitter), 1, file);
-					
-			printf(" ID: %d \n USER: %s \n HASHTAGS: %s \n MENSAGEM: %s",tw->id_twitter,tw->usuario, tw->hashtag,tw->mensagem); 
+
+			printf(" ID: %d \n USER: %s \n HASHTAGS: %s \n MENSAGEM: %s",tw->id_twitter,tw->usuario, tw->hashtag,tw->mensagem);
 			printf("\n--------------------------------------------------------------------------------------------------------------------------------\n");
 			count++;
 		}
 		printf("%d registros\n", count);
 
+	} else {
+		printf("SHIIIITITT\n");
 	}
 }
 
 
 
 void LaunchMenu(){
-	char *dir = createDir(); 
+	char *dir = createDir();
 	FILE *file, *index;
-	
+
 	struct twitter *t_object = (struct twitter*) malloc(sizeof(struct twitter));
 	struct index *t_index = (struct index *)malloc(sizeof(struct index));
-	
+
     struct usuario_index *u_index = (struct usuario_index *)malloc(sizeof(struct usuario_index));
-	
-	char menu[500] = "\nSelecione a opcao abaixo\n1- Listar todos os registros\n2- Indexar Arquivo (HashTag)\n3- Indexar Arquivo (Usuario)\n4- Pesquisar Hashtag\nInforme a opcao: ";
-    printf("\n%s\n",menu);
+
+	char menu[500] = "\nSelecione a opcao abaixo \
+										\n1- Listar todos os registros \
+										\n2- Indexar Arquivo (HashTag) \
+										\n3- Indexar Arquivo (Usuario) \
+										\n4- Pesquisar Hashtag \
+										\n5- Carregar index em mem贸ria (HashTag) \
+										\n6- Carregar index em mem贸ria (Usuario) \
+										\nInforme a opcao: ";
+
+  printf("\n%s\n",menu);
 	bool exit = false;
 	while(!exit){
-		
-	
+
+
 		int option;
-		
+
 		scanf("%d",&option);
-		
+
 		switch(option){
 			case 1:
 				displayAll(t_object);
@@ -338,7 +446,7 @@ void LaunchMenu(){
 			break;
 			case 2:
 				indexar(t_object,t_index);
-				indexarPrim();	
+				indexarPrim();
 				printf("\n%s\n",menu);
 			break;
 			case 3:
@@ -350,7 +458,15 @@ void LaunchMenu(){
 				printf("\nInforme a hashtag:\n");
 				scanf("%s",&term);
 				search(t_object,term);
-				
+
+				printf("\n%s\n",menu);
+			break;
+			case 5:
+				indexar_em_memoria(t_object, t_index);
+				printf("\n%s\n",menu);
+			break;
+			case 6:
+				indexar_user_em_memoria(t_object, u_index);
 				printf("\n%s\n",menu);
 			break;
 			case 0:
@@ -358,24 +474,24 @@ void LaunchMenu(){
 			break;
 		}
 	}
-	
-	
-	
+
+
+
 }
 
 
 main(){
-	
-	
-//testet();	
-//indexarPrim();	
-LaunchMenu();
-//	
-	
- //indexar(t_object,t_index);
-  
 
-	
-	
-	
+
+//testet();
+//indexarPrim();
+LaunchMenu();
+//
+
+ //indexar(t_object,t_index);
+
+
+
+
+
 }
