@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <Windows.h>
+// #include <Windows.h>
 
 struct twitter{
 	
@@ -15,13 +15,13 @@ struct twitter{
 	
 };
 
-char* data_file = "c:\\temp\\OrgArq\\file.dat";
-char* index_file = "c:\\temp\\OrgArq\\index.dat";
-char* index_user_file = "c:\\temp\\OrgArq\\index_user.dat";
+// char* data_file = "c:\\temp\\OrgArq\\file.dat";
+// char* index_file = "c:\\temp\\OrgArq\\index.dat";
+// char* index_user_file = "c:\\temp\\OrgArq\\index_user.dat";
 
-// char* data_file = "/data/college/TrabalhoOrgArquivos/file.dat";
-// char* index_file = "/data/college/TrabalhoOrgArquivos/index.dat";
-// char* index_user_file = "/data/college/TrabalhoOrgArquivos/index_user.dat";
+char* data_file = "/data/college/TrabalhoOrgArquivos/file.dat";
+char* index_file = "/data/college/TrabalhoOrgArquivos/index.dat";
+char* index_user_file = "/data/college/TrabalhoOrgArquivos/index_user.dat";
 
 struct index **memory_index = NULL;
 long int memory_index_size = 0;
@@ -42,20 +42,20 @@ struct usuario_index{
 };
 
 char* createDir(){
-	if(!CreateDirectory("c:\\temp\\OrgArq", NULL)) {
-        return NULL;
-  	}
-  	else{
-  		FILE *file;
+	// if(!CreateDirectory("c:\\temp\\OrgArq", NULL)) {
+    //     return NULL;
+  	// }
+  	// else{
+  	// 	FILE *file;
   		
-  		if(file = fopen(data_file,"wb+")){
-		 return data_file;
-		}
-		else{
-			 return NULL;
-		}
-	}
-	// return NULL;
+  	// 	if(file = fopen(data_file,"wb+")){
+	// 	 return data_file;
+	// 	}
+	// 	else{
+	// 		 return NULL;
+	// 	}
+	// }
+	return NULL;
 }
 
 void search_memory(struct twitter *tw, char *hashtag ){
@@ -120,9 +120,33 @@ void search(struct twitter *tw, char *hashtag ) {
 }
 
 
+void indexar_hashtags(FILE *indexf, char* hashtags, long int pos_in_file) {
+	struct index *aux_index = (struct index *)malloc(sizeof(struct index));
+	char *r;
+
+	aux_index->pos_in_file = pos_in_file;
+	r = strdup(hashtags);
+
+    char *tok = r, *end = r;
+
+    while (tok != NULL) {
+        strsep(&end, "#");
+
+        if(strcmp(tok, "")) {
+			strcpy(aux_index->hashtag, tok);
+			fwrite(aux_index,sizeof(struct index), 1, indexf);
+			printf("NOVO REGISTRO INSERIDO NO INDEX (%ld): %s \n",aux_index->pos_in_file, aux_index->hashtag);
+		}
+
+        tok = end;
+    }
+
+    free(r);
+}
+
+
 void indexar(struct twitter *tw, struct index *ix){
 	FILE *file, *index;
-	struct index *aux_index = (struct index *)malloc(sizeof(struct index));
 	int posicao_index = 0;
 	if(file = fopen(data_file,"rb")){
 	
@@ -137,21 +161,12 @@ void indexar(struct twitter *tw, struct index *ix){
 				posicao_index++;
 			}
 
-			if(index){
-					aux_index->pos_in_file = ftell(file);
-					strcpy(aux_index->hashtag, tw->hashtag);
-					fwrite(aux_index,sizeof(struct index),1,index);
-					printf("NOVO REGISTRO INSERIDO NO INDEX (%ld): %s \n",aux_index->pos_in_file, aux_index->hashtag);
-			
-			}
+			if(index) indexar_hashtags(index, tw->hashtag, ftell(file));
 			
 			fclose(index);
-			
 		}
 		
 	}
-	
-	
 
 }
 
@@ -178,7 +193,7 @@ void indexarByUser(struct twitter *tw, struct usuario_index *ix){
 					aux_index->pos_in_file = ftell(file);
 					strcpy(aux_index->usuario, tw->usuario);
 					fwrite(aux_index,sizeof(struct usuario_index),1,index);
-					printf("NOVO REGISTRO INSERIDO NO INDEX: %s \n",aux_index->usuario);
+					// printf("NOVO REGISTRO INSERIDO NO INDEX: %s \n",aux_index->usuario);
 				}
 			
 			}
@@ -242,8 +257,7 @@ void indexar_user_em_memoria(struct twitter *tw, struct usuario_index *ix) {
 		index = fopen(index_user_file,"rb");
 	}
 
-	fseek(index, 0L, SEEK_END);
-	memory_user_index_size = ftell(index) / sizeof(struct usuario_index);
+	memory_user_index_size = (fseek(index, 0, SEEK_END)+1) / sizeof(struct usuario_index);
 
 	printf("Usuarios carregados %ld\n", memory_user_index_size);
 
@@ -265,6 +279,42 @@ void indexar_user_em_memoria(struct twitter *tw, struct usuario_index *ix) {
 	printf("Index usuário carregado em memória com sucesso!");
 }
 
+int index_cmp_by_hashtag(const void *x, const void *y) 
+{ 
+	struct index *a=*((struct index**)x), *b=*((struct index**)y);
+    return strcmp(a->hashtag, b->hashtag);
+} 
+
+void ordenar_index(struct twitter *tw, struct index *ix) {
+	if(!memory_index_size) indexar_em_memoria(tw, ix);
+
+	qsort(memory_index, memory_index_size, sizeof(struct index *), index_cmp_by_hashtag);
+	printf("\nOrdenação finalizada.\nAtualizando arquivo de index...\n");
+
+	int i;
+	FILE *indexf = fopen(index_file, "wb");;
+
+	for(i = 0; i < memory_index_size; i++) {	
+		fwrite(memory_index[i], sizeof(struct index), 1, indexf);
+		fseek(indexf, 0L, SEEK_END);
+	}
+
+	printf("memory_index_size: %d | %d\n", memory_index_size, i);
+	printf("Arquivo de index atualizado com a ordenação.\n");
+}
+
+void print_index(){
+	if(!memory_index_size) {
+		printf("Index não carregado em memória\n");
+		return;
+	}
+
+	int i;
+	for(i = 0; i < memory_index_size; i++) {
+		printf("#%s\n", memory_index[i]->hashtag);
+	}
+}
+
 void displayAll(struct twitter *tw){
 
 	FILE *file;
@@ -282,7 +332,7 @@ void displayAll(struct twitter *tw){
 		printf("%d registros\n", count);
 
 	} else {
-		printf("SHIIIITITT\n");
+		printf("Ajustar configurações de caminha do arquivo!\n");
 	}
 }
 
@@ -304,6 +354,8 @@ void LaunchMenu(){
 										\n4- Pesquisar Hashtag \
 										\n5- Carregar index em memória (HashTag) \
 										\n6- Carregar index em memória (Usuario) \
+										\n7- Ordena index em memória (Usuario) \
+										\n8- Imprimir index em memória (Usuario) \
 										\nInforme a opcao: ";
 
   printf("\n%s\n",menu);
@@ -342,6 +394,14 @@ void LaunchMenu(){
 			break;
 			case 6:
 				indexar_user_em_memoria(t_object, u_index);
+				printf("\n%s\n",menu);
+			break;
+			case 7:
+				ordenar_index(t_object, t_index);
+				printf("\n%s\n",menu);
+			break;
+			case 8:
+				print_index();
 				printf("\n%s\n",menu);
 			break;
 			case 0:
