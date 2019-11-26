@@ -5,8 +5,8 @@ Hipótese: Quais os filmes mais comentados entre setembro e outubro de 2019?
 Rede Social: Twitter
 
 Resultado (top2):
-  1- Joker (13054)
-  2- Starwars (10226)
+1. Joker (13054)
+2. Starwars (10226)
 
 Linguagens: Ruby, C
 
