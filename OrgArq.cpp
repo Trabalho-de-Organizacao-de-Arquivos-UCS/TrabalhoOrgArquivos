@@ -115,6 +115,94 @@ void search_file(struct twitter *tw, char *hashtag ){
 	}
 }
 
+
+void bynary_search(struct twitter *tw,char *hashtag){
+	struct index *aux_index = (struct index *)malloc(sizeof(struct index));
+	int pos;
+	int count = 0;
+	bool flag = false;
+	FILE *file, *index;
+
+	char *ocorrencia[200];
+
+	file = fopen(data_file,"rb");
+	int cc = 0;
+	
+	fclose(index);
+	if(index = fopen(index_file,"rb")){
+		
+		fseek(index, 0 , SEEK_END);
+		int final_file = ftell(index);
+		int total_registros =  abs(final_file / sizeof(struct index));		
+		rewind(index);
+		
+		bool exit = false;
+		int meio,inicio,fim,posindex,ppp;
+	 
+	 	inicio = 0;
+	 	fim = total_registros - 1;
+		
+		while(inicio <= fim && exit == false){
+			
+			meio = (inicio+fim) / 2;
+			fseek(index, sizeof(struct index) * meio, SEEK_SET);
+			fread(aux_index, sizeof(struct index), 1, index);
+			
+			int cmp = strcmp(aux_index->hashtag,hashtag);
+			
+			switch(cmp){
+				
+				case 0:
+					ppp = meio;
+					while(!exit && !feof(index)){
+						ppp--;
+						fseek(index, sizeof(struct index) * ppp, SEEK_SET);
+						fread(aux_index, sizeof(struct index), 1, index);
+						
+						if(strcmp(aux_index->hashtag,hashtag) != 0){
+							
+							while(!exit && !feof(index)){
+								ppp++;
+								fseek(index, sizeof(struct index) * ppp, SEEK_SET);
+								fread(aux_index, sizeof(struct index), 1, index);
+								if(strcmp(aux_index->hashtag,hashtag) != 0 || ppp == total_registros){
+									exit = true;
+								}else{
+									 posindex = ftell(index);
+									 
+									 fseek(file, aux_index->pos_in_file - sizeof(struct twitter), SEEK_SET);
+								     fread(tw, sizeof(struct twitter), 1, file);
+					
+									 printf("MATCHED POS:%ld {%s}|{%s}\n", aux_index->pos_in_file, aux_index->hashtag, hashtag);
+									 printf(" ID: %d \n USER: %s \n HASHTAGS: %s \n MENSAGEM: %s",tw->id_twitter,tw->usuario, tw->hashtag,tw->mensagem);
+									 printf("\n--------------------------------------------------------------------------------------------------------------------------------\n");
+									 count++;
+							
+								}
+							}
+						}
+					}
+					
+				
+				break;
+				
+				case 1:
+					fim = meio - 1;
+				break;
+				
+				case -1:
+					inicio = meio + 1;
+				break;
+				
+			}
+		
+		}
+		
+
+	}
+}
+
+
 void search(struct twitter *tw, char *hashtag ) {
 	if(memory_index_size) search_memory(tw, hashtag);
 	else search_file(tw, hashtag);
@@ -124,7 +212,7 @@ void search(struct twitter *tw, char *hashtag ) {
 void indexar(struct twitter *tw, struct index *ix){
 	FILE *file, *index;
 	struct index *aux_index = (struct index *)malloc(sizeof(struct index));
-	int posicao_index = 0;
+	int posicao_index = 0, cont = 0;
 	if(file = fopen(data_file,"rb")){
 
 		while(!feof(file)){
@@ -146,134 +234,12 @@ void indexar(struct twitter *tw, struct index *ix){
 
 			}
 			fclose(index);
-
+			cont++;
+			
 		}
 
 	}
 
-
-
-}
-
-void testet(){
-	FILE *index_primario;
-	struct index_prim *aux_index_prim = (struct index_prim *)malloc(sizeof(struct index_prim));
-
-
-		if(	index_primario = fopen("c:\\temp\\OrgArq\\index_prim.dat","rb")){
-
-			for ( ;; ) {
-			    fread(aux_index_prim, sizeof(struct index_prim), 1, index_primario);
-			    if (feof( index_primario )) break;
-			    printf("------------------\n");
-				if(aux_index_prim->hashtag[0] == '#'){
-					for(int i = 0; i < aux_index_prim->lista.used; i++){
-							printf("Hash:%s - %d\n",aux_index_prim->hashtag,aux_index_prim->lista.array[i]);
-					}
-			    }
-		   }
-		}
-}
-
-void indexarPrim(){
-
-	struct index_prim *aux_index_prim = (struct index_prim *)malloc(sizeof(struct index_prim));
-
-	struct index_prim *retorno = (struct index_prim *)malloc(sizeof(struct index_prim));
-
-	struct index *aux_index = (struct index *)malloc(sizeof(struct index));
-
-	FILE *index_primario, *index, *temp;
-
-	index_primario = fopen("c:\\temp\\OrgArq\\index_prim.dat","wb");
-	temp = fopen("c:\\temp\\OrgArq\\temp.dat","wb");
-	fclose(index_primario);
-	fclose(temp);
-
-
-	aux_index = (struct index *)malloc(sizeof(struct index));
-	index = fopen("c:\\temp\\OrgArq\\index.dat","rb");
-	bool exist = false, breake = false,f_reg = true;
-	while(!feof(index)){
-		exist = false;
-		breake = false;
-		temp = fopen("c:\\temp\\OrgArq\\temp.dat","wb");
-		fread(aux_index, sizeof(struct index), 1, index);
-
-
-
-   	    	f_reg = false;
-   	    	index_primario = fopen("c:\\temp\\OrgArq\\index_prim.dat","rb");
-
-			while(!feof(index_primario)){
-
-
-				aux_index_prim = (struct index_prim *)malloc(sizeof(struct index_prim));
-
-				fread(aux_index_prim, sizeof(struct index_prim), 1, index_primario);
-
-
-				printf("COMPARANDO: aux_index->hashtag: %s =  aux_index_prim->hashtag: %s\n", aux_index->hashtag,aux_index_prim->hashtag);
-				if(strcmp(aux_index->hashtag,aux_index_prim->hashtag) == 0  && aux_index->hashtag[0]  == '#'){
-					exist = true;
-					printf("HASH EXISTENTE: %s\n", aux_index->hashtag);
-					int index_pos = ftell(index);
-					insertArray(&(aux_index_prim->lista), index_pos);
-				}
-				if(aux_index_prim->hashtag[0] == '#' && breake == false){
-
-					fwrite(aux_index_prim,sizeof(struct index_prim),1,temp);
-				}
-
-
-			}
-
-
-
-
-			if(exist == false && aux_index->hashtag[0] == '#'){
-				printf("HASH N�O EXISTENTE: %s\n", aux_index->hashtag);
-				Array list;
-//				initArray(&list, 1);
-				insertArray(&list, ftell(index));
-				aux_index_prim->lista = list;
-				strcpy(aux_index_prim->hashtag,aux_index->hashtag);
-				fwrite(aux_index_prim,sizeof(struct index_prim),1,temp);
-			}
-
-
-
-		fclose(index_primario);
-		fclose(temp);
-
-		temp = fopen("c:\\temp\\OrgArq\\temp.dat","rb");
-		index_primario = fopen("c:\\temp\\OrgArq\\index_prim.dat","wb");
-		printf("PASSANDO PARA INDEXP-\n");
-		while(!feof(temp)){
-
-			aux_index_prim = (struct index_prim *)malloc(sizeof(struct index_prim));
-			fread(aux_index_prim, sizeof(struct index_prim), 1, temp);
-
-			if(aux_index_prim->hashtag[0] == '#'){
-
-				printf("PASSANDO: => %s\n", aux_index_prim->hashtag);
-				fwrite(aux_index_prim,sizeof(struct index_prim),1,index_primario);
-			}
-
-
-		}
-
-		fclose(temp);
-		fclose(index_primario);
-
-	}
-
-
-
-
-	fclose(index_primario);
-	fclose(index);
-	fclose(temp);
 
 
 }
@@ -446,7 +412,6 @@ void LaunchMenu(){
 			break;
 			case 2:
 				indexar(t_object,t_index);
-				indexarPrim();
 				printf("\n%s\n",menu);
 			break;
 			case 3:
@@ -457,7 +422,7 @@ void LaunchMenu(){
 				char term[200];
 				printf("\nInforme a hashtag:\n");
 				scanf("%s",&term);
-				search(t_object,term);
+				bynary_search(t_object,term);
 
 				printf("\n%s\n",menu);
 			break;
