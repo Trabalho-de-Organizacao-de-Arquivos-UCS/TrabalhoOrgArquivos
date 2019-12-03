@@ -53,7 +53,7 @@ def InsertDBFromFile():
 
 
 
-    with open('C:\\temp\\OrgArq\\file.dat', 'rb') as file:
+    with open('/data/college/TrabalhoOrgArquivos/file.dat', 'rb') as file:
         TwittsList = []
         x = Twitter()
         while file.readinto(x) == sizeof(x):
@@ -69,6 +69,13 @@ def InsertDBFromFile():
             TwittsList.append(twitt)
         TwitterDB.insert_many(TwittsList)
 
+def TDDImportationSucessful():
+    TwitterDB = MongoConection.db.dbo.Twitter
+    count = TwitterDB.count()
+
+    print('\nA importação deve importar 147732 registros')
+    print('TDD Funcinou? ' + str(count == 147732))
+    print('Registros retornados: ' +  str(count))
 
 def MongoHashtagIndex():
     TwitterDB = MongoConection.db.dbo.Twitter
@@ -81,6 +88,12 @@ def MongoUserIndex():
     TwitterDB.create_index([('usuario', pymongo.ASCENDING)], unique = False)
     print(sorted(list(TwitterDB.index_information())))
 
+def TDDHashtagsMustBeStoragedWithCrypto():
+    TwitterDB = MongoConection.db.dbo.Twitter
+
+    for tweet in TwitterDB.find().limit(1):
+        print('Hashtag armazenada: ' + str(tweet["hashtag"]))
+        print('Hashtag descriptografada: ' + FernetDecrypt(tweet["hashtag"]))
 
 def SelectAll():
     TwitterDB = MongoConection.db.dbo.Twitter
@@ -88,19 +101,77 @@ def SelectAll():
         Twitter["hashtag"] = FernetDecrypt(Twitter["hashtag"])
         pprint.pprint(Twitter)
 
-def SelectHashtag(hashtag):
-    print("Conectando...")
+def SelectHashtag(hashtag, printit = True):
+    if printit: print("Conectando...")
     TwitterDB = MongoConection.db.dbo.Twitter
-    print("Reunindo informações...")
+
+    if printit: print("Reunindo informações...")
     compare = hashtag.replace('#','')
     compare = compare.lower()
-    print(compare)
+    if printit: print(compare)
+
+    count = 0
     for Twitter in TwitterDB.find():
         dbhashtag = FernetDecrypt(Twitter["hashtag"]).lower()
         if(compare in dbhashtag):
-            Twitter["hashtag"] = dbhashtag
-            pprint.pprint(Twitter)
+            count += 1
+            if printit:
+                Twitter["hashtag"] = dbhashtag
+                print(Twitter)
 
+    if printit: print("Hashtags encontrados: " + str(count))
+    return count
+
+def SelectUser(user, printit = True):
+    if printit: print("Conectando...")
+    TwitterDB = MongoConection.db.dbo.Twitter
+    if printit: print("Reunindo informações...")
+    compare = user.lower()
+    if printit: print(compare)
+
+    count = 0
+    for Twitter in TwitterDB.find():
+        dbuser = Twitter["usuario"].lower()
+        if(compare == dbuser):
+            count += 1
+            if printit:
+                dbhashtag = FernetDecrypt(Twitter["hashtag"]).lower()
+                Twitter["hashtag"] = dbhashtag
+                pprint.pprint(Twitter)
+
+    if printit: print("Usuários encontrados: " + str(count))
+    return count
+
+def TDDSelectHashtagMustWorkAndBeCaseUnsensitive():
+    searchparam1 = 'inktober2019'
+    searchparam2 = 'INKtoBER2019'
+
+    count1 = SelectHashtag(searchparam1, False)
+    count2 = SelectHashtag(searchparam2, False)
+
+    print('\nA busca de hashtag \"' + searchparam1 + '\" deve retornar 545 registros')
+    print('TDD Funcinou? ' + str(count1 == 545))
+    print('Registros retornados: ' +  str(count1))
+
+    print('\nA busca deve não diferenciar maiusculas e minusculas entao a busca por \"' + searchparam2 + '\" deve retornar o mesmo número de registros que por "' + searchparam1 + '\"')
+    print('TDD Funcinou? ' + str(count1 == count2))
+    print('Registros retornados: ' +  str(count2))
+
+def TDDSelectUserMustWorkAndBeCaseUnsensitive():
+    searchparam1 = 'Reylo4Ever'
+    searchparam2 = searchparam1.lower()
+
+    count1 = SelectUser(searchparam1, False)
+    count2 = SelectUser(searchparam2, False)
+
+    print('A busca do usuário \"' + searchparam1 + '\" deve retornar 73 registros')
+    print('TDD Funcinou? ' + str(count1 == 73))
+    print('Registros retornados: ' +  str(count1))
+
+    print('A busca deve não diferenciar maiusculas e minusculas entao usuário \"' + searchparam2 + '\" deve retornar o mesmo número de registros que do usuário ' + searchparam1)
+    print('TDD Funcinou? ' + str(count1 == count2))
+    print('Registros retornados: ' +  str(count2))
+    
 
 def LoadtTwitterList():
     TwitterDB = MongoConection.db.dbo.Twitter
@@ -216,11 +287,11 @@ class Encrpt:
 
 def FernetGenerateKey():
     key = Fernet.generate_key()
-    file = open("C:\\temp\\OrgArq\\key.bin", "wb")
+    file = open("/data/college/TrabalhoOrgArquivos/key.bin", "wb")
     file.write(key)
 
 def GetFernetKey():
-    file = open("C:\\temp\\OrgArq\\key.bin", "rb")
+    file = open("/data/college/TrabalhoOrgArquivos/key.bin", "rb")
     key = file.read()
     return key
 
@@ -238,29 +309,36 @@ def FernetDecrypt(token):
 
 def menu():
 
-    menu = "\n1- Listar todos os Registros\n2- Pesquisar Hashtag\n3- Responder Hipótese\n4- Inserir Dados do Arquivo no Banco\n"
-    print(menu)
+    menu = "\nMenu principal:\n\t1- Listar todos os Registros\n\t2- Pesquisar Hashtag\n\t3- Responder Hipótese\n\t4- Inserir Dados do Arquivo no Banco\n\t5- Pesquisar Usuario"
+    menutdd = "\nTDDs:\n\t10 - Quantidade tweets importados\n\t11 - Busca de hashtag\n\t12 - Busca de usuario\n\t13 - Armazenamento cryptografado\n"
     sair = False
 
     while sair != True:
+        print(menu)
+        print(menutdd)
         opcao = int(input("Digite uma opção: "))
         if(opcao == 1):
             SelectAll()
-            print(menu)
         elif(opcao == 2):
             hashtag = input("Informe a hashtag: ")
             SelectHashtag(hashtag)
-            print(menu)
         elif(opcao == 3):
             MovieCounts()
-            print(menu)
         elif(opcao == 4):
             InsertDBFromFile()
-            print(menu)
+        elif(opcao == 5):
+            user = input("Informe o usuario: ")
+            SelectUser(user) #test with Reylo4Ever
+        elif(opcao == 10):
+            TDDImportationSucessful()
+        elif(opcao == 11):
+            TDDSelectHashtagMustWorkAndBeCaseUnsensitive()
+        elif(opcao == 12):
+            TDDSelectUserMustWorkAndBeCaseUnsensitive()
+        elif(opcao == 13):
+            TDDHashtagsMustBeStoragedWithCrypto()
         elif (opcao == 0):
             sair = True
-        else:
-            print(menu)
 
 
 
