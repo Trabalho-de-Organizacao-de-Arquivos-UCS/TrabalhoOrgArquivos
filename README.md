@@ -4,11 +4,12 @@ Trabalho da Disciplina de Organização de Arquivos
 Hipótese: Quais os filmes mais comentados entre setembro e novembro de 2019?
 Rede Social: Twitter
 
-Resultado Top2:
-1. Joker (13054)
-2. Starwars (10226)
+Resultado Top 3:
+1. Joker (43358)
+2. Starwars (28146)
+3. Terminator (16302)
 
-Total de registros: 50000+
+Total de registros: 147732
 
 Linguagens: Ruby, C, Python
 
