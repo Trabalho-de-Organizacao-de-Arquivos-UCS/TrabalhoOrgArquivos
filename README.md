@@ -1,7 +1,7 @@
 # TrabalhoOrgArquivos
 Trabalho da Disciplina de Organização de Arquivos
 
-Hipótese: Quais os filmes mais comentados entre setembro e outubro de 2019?
+Hipótese: Quais os filmes mais comentados entre setembro e novembro de 2019?
 Rede Social: Twitter
 
 Resultado Top2:
@@ -10,7 +10,7 @@ Resultado Top2:
 
 Total de registros: 50000+
 
-Linguagens: Ruby, C
+Linguagens: Ruby, C, Python
 
 Campos:
 id_twitter: int
