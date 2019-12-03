@@ -3,6 +3,7 @@ from pymongo import *
 from cryptography.fernet import Fernet
 import pprint
 import pymongo
+import webbrowser
 
 class MongoDb():
      db = MongoClient('localhost', 27017)
@@ -174,10 +175,23 @@ def MovieCounts():
     MaxCount = MaxCount + tAdAstra.Count
     ListMovies.append(tAdAstra)
     print("Calculando %...")
+    data_donut = []
+    data_bar = []
     for movie in ListMovies:
         perc = (movie.Count * 100) / MaxCount
         print("Filme: {0} Total: {1} - {2:.2f}%".format(movie.Name,movie.Count,perc))
+        data_donut.append({"value": round(perc,2), "label": movie.Name})
+        data_bar.append({"y": movie.Count, "x": movie.Name})
 
+    f = open('data.jsonp', 'w')
+
+    content = "json_donut = {0};json_donut = JSON.stringify(json_donut);json_bar = {1};json_bar = JSON.stringify(json_bar);".format(data_donut,data_bar)
+
+    f.write(content)
+    f.close()
+
+    filename = 'file:///C:/Users/Gabri/Documents/Projetos/TrabalhoOrgArquivos/OrgArcPython/index.html'
+    webbrowser.open_new_tab(filename)
 
 
 
@@ -252,8 +266,11 @@ def menu():
 
 
 def main():
+
     menu()
      ##InsertDBFromFile() INSERIR NO BANCO
+
+
 
 
 

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
 // #include <Windows.h>
 
 struct twitter{
@@ -20,9 +21,9 @@ struct twitter{
 // char* index_file = "c:\\temp\\OrgArq\\index.dat";
 // char* index_user_file = "c:\\temp\\OrgArq\\index_user.dat";
 
-char* data_file = "/data/college/TrabalhoOrgArquivos/file.dat";
-char* index_file = "/data/college/TrabalhoOrgArquivos/index.dat";
-char* index_user_file = "/data/college/TrabalhoOrgArquivos/index_user.dat";
+char* data_file = "C:\\temp\\OrgArq\\file.dat";
+char* index_file = "C:\\temp\\OrgArq\\index.dat";
+char* index_user_file = "C:\\temp\\OrgArq\\index_user.dat";
 
 struct index **memory_index = NULL;
 long int memory_index_size = 0;
@@ -42,6 +43,16 @@ struct usuario_index{
 
 };
 
+char *strsep(char **stringp, const char *delim) {
+    char *rv = *stringp;
+    if (rv) {
+        *stringp += strcspn(*stringp, delim);
+        if (**stringp)
+            *(*stringp)++ = '\0';
+        else
+            *stringp = 0; }
+    return rv;
+}
 
 char* createDir(){
 	// if(!CreateDirectory("c:\\temp\\OrgArq", NULL)) {
